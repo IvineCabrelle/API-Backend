@@ -70,6 +70,22 @@ app.post('/register', async (req, res) => {
   }
 });
 
+app.get('/patients/:id', async (req, res) => {
+  const patientId = req.params.id;
+  try {
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient non trouvé' });
+    }
+    res.json({ patient });
+  } catch (error) {
+    console.error('Erreur lors de la récupération du patient:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+
+
 // Route de connexion
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -102,21 +118,36 @@ app.post('/login', async (req, res) => {
 
 // Ajouter un patient
 app.post('/patients', async (req, res) => {
-  const { name, age, gender, disease } = req.body;
+  const {
+    name, age, gender, disease, antecedent, diagnostic,
+    medicaments, planTraitement, dateVaccination, allergies, resultatsTest
+  } = req.body;
 
-  if (!name || !age || !gender || !disease) {
+  // Vérifier si tous les champs obligatoires sont présents
+  if (!name || !age || !gender || !disease || !antecedent || !diagnostic ||
+      !medicaments || !planTraitement || !dateVaccination || !allergies || !resultatsTest) {
     return res.status(400).json({ message: "Tous les champs sont requis." });
   }
 
   try {
+    // Création du nouveau patient avec toutes les données reçues
     const newPatient = new Patient({
       name,
       age,
       gender,
-      disease
+      disease,
+      antecedent,
+      diagnostic,
+      medicaments,
+      planTraitement,
+      dateVaccination,
+      allergies,
+      resultatsTest
     });
 
+    // Sauvegarder le patient dans la base de données
     await newPatient.save();
+
     res.status(201).json({ message: 'Patient ajouté avec succès.' });
   } catch (error) {
     console.error(error);
@@ -124,72 +155,63 @@ app.post('/patients', async (req, res) => {
   }
 });
 
+
+//Route PUT pour mettre à jour un patient
 app.put('/patients/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, age, gender, disease } = req.body;
-
-  // Validation des données
-  if (!name || !age || !gender || !disease) {
-    return res.status(400).json({ message: "Tous les champs sont requis." });
-  }
-
-  // Vérifier que l'ID est valide
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "L'ID du patient est invalide." });
-  }
+  const patientId = req.params.id;
+  const { name, age, gender, disease, antecedent, diagnostic, medicaments, planTraitement, dateVaccination, allergies, resultatsTest } = req.body;
 
   try {
-    // Rechercher le patient par son ID
-    const patient = await Patient.findById(id);
-    if (!patient) {
-      return res.status(404).json({ message: "Patient non trouvé." });
+    // Trouver et mettre à jour le patient
+    const updatedPatient = await Patient.findByIdAndUpdate(
+      patientId,
+      {
+        name,
+        age,
+        gender,
+        disease,
+        antecedent,
+        diagnostic,
+        medicaments,
+        planTraitement,
+        dateVaccination,
+        allergies,
+        resultatsTest,
+      },
+      { new: true } // Cela renverra l'objet patient mis à jour
+    );
+
+    if (!updatedPatient) {
+      return res.status(404).json({ message: 'Patient non trouvé' });
     }
 
-    // Mettre à jour le patient
-    patient.name = name;
-    patient.age = age;
-    patient.gender = gender;
-    patient.disease = disease;
-
-    await patient.save();
-
-    res.status(200).json({ message: "Patient mis à jour avec succès", patient });
+    // Renvoie la réponse avec le patient mis à jour
+    res.json({
+      message: 'Patient modifié avec succès',
+      patient: updatedPatient,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur du serveur.' });
+    console.error('Erreur lors de la modification du patient:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 
 
 
-// Supprimer un patient
+// Route pour supprimer un patient
 app.delete('/patients/:id', async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const deletedPatient = await Patient.findByIdAndDelete(id);
-
-    if (!deletedPatient) {
-      return res.status(404).json({ message: 'Patient non trouvé.' });
+    const patient = await Patient.findByIdAndDelete(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient non trouvé' });
     }
-
-    res.status(200).json({ message: 'Patient supprimé avec succès.' });
+    res.json({ message: 'Patient supprimé avec succès' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur du serveur.' });
+    res.status(500).json({ message: 'Erreur interne du serveur' });
   }
 });
 
-// Obtenir tous les patients
-app.get('/patients', async (req, res) => {
-  try {
-    const patients = await Patient.find();
-    res.status(200).json(patients);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur du serveur.' });
-  }
-});
+
 
 
 // Lancer le serveur
