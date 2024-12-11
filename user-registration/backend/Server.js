@@ -212,6 +212,38 @@ app.delete('/patients/:id', async (req, res) => {
 });
 
 
+// Route pour récupérer tous les patients
+app.get('/patients', async (req, res) => {
+  try {
+    const patients = await Patient.find();  // Récupère tous les patients de la base de données
+    res.json(patients);  // Retourne la liste des patients
+  } catch (error) {
+    console.error('Erreur lors de la récupération des patients:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+app.get('/patients', async (req, res) => {
+  console.log("Requête reçue pour récupérer la liste des patients");
+  try {
+    const patients = await Patient.find();
+    res.json(patients);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des patients:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+app.get('/patients', async (req, res) => {
+  console.log("Requête reçue pour récupérer la liste des patients");
+  try {
+    const patients = await Patient.find();
+    res.json(patients);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des patients:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
 
 
 // Lancer le serveur
